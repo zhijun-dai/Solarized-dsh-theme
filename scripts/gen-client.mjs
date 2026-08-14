@@ -514,7 +514,7 @@ function tokensBlock() {
 
 const CLIENT_TEMPLATE = `// dsh-Solarized — browser half (client plugin bundle).
 //
-// Loaded by dsh-client-modules at /plugins/solarized-dsh-theme/client.js and
+// Loaded by dsh-client-modules at /plugins/@yuquexianzhou/solarized-dsh-theme/client.js and
 // executed through the vendored cordis Loader's lazy-CJS module table
 // (window.__ModuleLoader__.load). The factory body is plain CJS with
 // require() resolved against the shell's module table — the same shape the
@@ -533,7 +533,7 @@ const CLIENT_TEMPLATE = `// dsh-Solarized — browser half (client plugin bundle
 // key set mirrors the alias/specific/shiki sheets shipped by
 // @deepseek-ai/dsh-client-ui-theme.
 window.__ModuleLoader__.load({
-	id: "solarized-dsh-theme",
+	id: "@yuquexianzhou/solarized-dsh-theme",
 	factory: (require) => {
 		var module = { exports: {} };
 		var exports = module.exports;
@@ -542,7 +542,7 @@ window.__ModuleLoader__.load({
 		let _react = require("react");
 		let _runtime_client = require("@deepseek-ai/dsh-client-runtime/client");
 
-		//#region solarized-dsh-theme: definitions
+		//#region @yuquexianzhou/solarized-dsh-theme: definitions
 		/** The settings row's locale namespace. */
 		const SETTINGS_NS = "settings.solarized";
 		/** localStorage key holding the selected theme id. */
@@ -587,7 +587,7 @@ __TOKENS__
 		};
 		//#endregion
 
-		//#region solarized-dsh-theme: persistence
+		//#region @yuquexianzhou/solarized-dsh-theme: persistence
 		/** Read a localStorage string value (null on absence or error). */
 		function readStorage(key) {
 			try {
@@ -619,7 +619,7 @@ __TOKENS__
 		}
 		//#endregion
 
-		//#region solarized-dsh-theme: settings row store
+		//#region @yuquexianzhou/solarized-dsh-theme: settings row store
 		/**
 		 * Theme row slot store: a mirror of the theme service snapshot. The
 		 * plugin's theme/change listener is the only writer; the row component
@@ -642,7 +642,7 @@ __TOKENS__
 		}
 		//#endregion
 
-		//#region solarized-dsh-theme: settings row
+		//#region @yuquexianzhou/solarized-dsh-theme: settings row
 		/** Inline style sheet for the row (kept dependency-free). */
 		const styles = {
 			group: {
@@ -841,7 +841,7 @@ __TOKENS__
 		}
 		//#endregion
 
-		//#region solarized-dsh-theme: client plugin body
+		//#region @yuquexianzhou/solarized-dsh-theme: client plugin body
 		/**
 		 * Required services: theme runtime (registration and switching), the
 		 * settings slot and locale (the picker row). Persistence is
@@ -863,7 +863,7 @@ __TOKENS__
 			const disposers = THEMES.map((themeDefinition) => ctx.theme.register(themeDefinition));
 			ctx.effect(() => () => {
 				for (const dispose of disposers) dispose();
-			}, "solarized-dsh-theme: theme registration");
+			}, "@yuquexianzhou/solarized-dsh-theme: theme registration");
 
 			// Restore the saved theme. The ThemeService adopts its durable
 			// built-in preference ("light"/"dark"/"system") from the Host
@@ -887,7 +887,7 @@ __TOKENS__
 			}, 5000);
 			ctx.effect(() => () => {
 				clearTimeout(bootWindow);
-			}, "solarized-dsh-theme: boot restore window");
+			}, "@yuquexianzhou/solarized-dsh-theme: boot restore window");
 
 			const themeStore = createThemeStore();
 			let themeBound;
@@ -907,7 +907,7 @@ __TOKENS__
 			ctx.effect(() => ctx.locale.register(SETTINGS_NS, {
 				zh,
 				en
-			}), "solarized-dsh-theme: settings row dictionaries");
+			}), "@yuquexianzhou/solarized-dsh-theme: settings row dictionaries");
 
 			const themeInjected = (actions) => {
 				themeBound = actions;

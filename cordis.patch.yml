@@ -4,4 +4,4 @@
 # package's dsh.client declaration, exactly like the shipped ui-* packages.
 - insert:
     - id: solarized
-      name: 'solarized-dsh-theme'
+      name: '@yuquexianzhou/solarized-dsh-theme'

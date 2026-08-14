@@ -34,7 +34,7 @@ dual-face plugin:
   loader entry (`solarized`); a no-op `apply`, exactly like the shipped ui-*
   packages.
 - **Browser half** (`lib/client.js`) — a `dsh.client` bundle (served at
-  `/plugins/solarized-dsh-theme/client.js`) that:
+  `/plugins/@yuquexianzhou/solarized-dsh-theme/client.js`) that:
   1. registers the four themes via `ctx.theme.register(...)`;
   2. restores the saved theme id and applies it with `ctx.theme.setTheme(...)`;
   3. keeps the picker row store in sync with `theme/change`;
@@ -107,7 +107,7 @@ what "上架" means today:
    ```
 3. Users install with:
    ```sh
-   dsh plugin --profile web add solarized-dsh-theme
+   dsh plugin --profile web add @yuquexianzhou/solarized-dsh-theme
    ```
    then restart `dsh web`.
 

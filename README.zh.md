@@ -29,7 +29,7 @@ DSH 的主题系统基于令牌：web 壳内置 `--dsw-*` 设计令牌，`ThemeR
 - **Host 半区**（`lib/index.js`）——一个 `dsh.bundle` 补丁层，插入一条 loader
   条目（`solarized`）；`apply` 为空操作，与随附的 ui-* 包完全一致。
 - **浏览器半区**（`lib/client.js`）——一个 `dsh.client` bundle（由
-  `/plugins/solarized-dsh-theme/client.js` 提供），负责：
+  `/plugins/@yuquexianzhou/solarized-dsh-theme/client.js` 提供），负责：
   1. 通过 `ctx.theme.register(...)` 注册四套主题；
   2. 恢复已保存的主题 id 并用 `ctx.theme.setTheme(...)` 应用；
   3. 让选择行的 store 与 `theme/change` 保持同步；
@@ -97,7 +97,7 @@ npm 就是今天的"上架"：
    ```
 3. 用户安装：
    ```sh
-   dsh plugin --profile web add solarized-dsh-theme
+   dsh plugin --profile web add @yuquexianzhou/solarized-dsh-theme
    ```
    然后重启 `dsh web`。
 
