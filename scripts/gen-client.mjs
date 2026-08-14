@@ -896,6 +896,13 @@ __TOKENS__
 			};
 			ctx.on("theme/change", (snapshot) => {
 				syncTheme(snapshot);
+				// If the preference moved to another plugin's third-party theme,
+				// drop our stored choice so only the last-picked plugin restores
+				// at boot (both plugins must implement this convention).
+				const pref = snapshot.preference;
+				if (pref !== DEFAULT_THEME && pref !== "light" && pref !== "dark" && !THEMES.some((themeDefinition) => themeDefinition.id === pref)) {
+					writeSavedTheme(DEFAULT_THEME);
+				}
 				// Re-assert from a fresh task: a re-entrant setTheme inside the
 				// dispatch is missed by other subscribers (ui-layout's
 				// ThemePresenter), so the restored theme would never reach the DOM.
