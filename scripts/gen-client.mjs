@@ -28,15 +28,15 @@ const SOLARIZED = {
 };
 
 const SEL_D = {
-	bg0: [24, 28, 32], bg1: [31, 37, 43], bg2: [40, 48, 54],
-	dim0: [106, 115, 125], fg0: [173, 188, 188], fg1: [202, 216, 217],
+	bg0: [16, 60, 72], bg1: [24, 73, 86], bg2: [45, 91, 105],
+	dim0: [114, 137, 143], fg0: [173, 188, 188], fg1: [202, 216, 217],
 	red: [250, 87, 80], green: [117, 185, 56], yellow: [219, 179, 45],
 	blue: [70, 149, 247], magenta: [242, 117, 190], cyan: [65, 199, 185],
-	orange: [237, 134, 73], violet: [134, 119, 207],
+	orange: [237, 134, 73], violet: [175, 136, 235],
 };
 
 const SEL_L = {
-	bg0: [251, 243, 219], bg1: [245, 237, 214], bg2: [239, 231, 207],
+	bg0: [251, 243, 219], bg1: [236, 227, 204], bg2: [213, 205, 182],
 	dim0: [144, 153, 149], fg0: [83, 103, 109], fg1: [58, 77, 83],
 	red: [210, 33, 45], green: [72, 145, 0], yellow: [173, 137, 0],
 	blue: [0, 114, 212], magenta: [202, 72, 152], cyan: [0, 156, 143],
@@ -377,7 +377,7 @@ function buildSelenizedDark() {
 
 function buildSelenizedLight() {
 	const P = SEL_L;
-	const L2 = mix(P.bg1, P.dim0, 0.15), L3 = mix(P.bg1, P.dim0, 0.28), OV = mix(P.bg1, P.dim0, 0.24);
+	const L2 = P.bg2, L3 = mix(P.bg2, P.dim0, 0.3), OV = mix(P.bg1, P.dim0, 0.24);
 	const M2 = mix(P.bg1, P.bg2, 0.5), M1 = mix(P.bg0, P.bg1, 0.5), GH = mix(P.bg1, P.dim0, 0.25);
 	const SOLID = L2, CIT = L2, SEGS = mix(P.bg0, [255, 255, 255], 0.5), SEGU = mix(P.bg1, P.dim0, 0.12);
 	const WHT5 = mix(P.bg0, [255, 255, 255], 0.5), WHT3 = mix(P.bg0, [255, 255, 255], 0.3);
