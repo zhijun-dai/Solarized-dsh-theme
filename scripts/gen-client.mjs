@@ -512,7 +512,7 @@ function tokensBlock() {
 	return out.join("\n");
 }
 
-const CLIENT_TEMPLATE = `// dsh-Solarized — browser half (client plugin bundle).
+const CLIENT_TEMPLATE = `// Solarized-dsh-theme — browser half (client plugin bundle).
 //
 // Loaded by dsh-client-modules at /plugins/@yuquexianzhou/solarized-dsh-theme/client.js and
 // executed through the vendored cordis Loader's lazy-CJS module table

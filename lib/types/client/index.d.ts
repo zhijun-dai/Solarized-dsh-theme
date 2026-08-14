@@ -1,5 +1,5 @@
 /**
- * dsh-Solarized client half types: the curated themes, the settings row, and
+ * Solarized-dsh-theme client half types: the curated themes, the settings row, and
  * the client plugin body.
  */
 import type { Context } from "@deepseek-ai/cordis";
