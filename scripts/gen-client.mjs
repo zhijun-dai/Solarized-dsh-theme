@@ -1,0 +1,910 @@
+// One-shot generator for lib/client.js: builds the four Solarized/Selenized
+// token tables from the source palettes and embeds them into the client
+// bundle template. Run: node scripts/gen-client.mjs
+//
+// Palette sources: Solarized (Ethan Schoonover, MIT) and Selenized
+// (Jan Warchol, MIT). Token key set mirrors the alias/specific/shiki tables
+// shipped by @deepseek-ai/dsh-client-ui-theme.
+import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+const hex = (r, g, b) =>
+	"#" + [r, g, b].map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0")).join("");
+
+const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+
+const rgba = (c, a) => `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${a})`;
+
+const SOLARIZED = {
+	base03: [0, 43, 54], base02: [7, 54, 66], base01: [88, 110, 117],
+	base00: [101, 123, 131], base0: [131, 148, 150], base1: [147, 161, 161],
+	base2: [238, 232, 213], base3: [253, 246, 227],
+	yellow: [181, 137, 0], orange: [203, 75, 22], red: [220, 50, 47],
+	magenta: [211, 54, 130], violet: [108, 113, 196], blue: [38, 139, 210],
+	cyan: [42, 161, 152], green: [133, 153, 0],
+};
+
+const SEL_D = {
+	bg0: [24, 28, 32], bg1: [31, 37, 43], bg2: [40, 48, 54],
+	dim0: [106, 115, 125], fg0: [173, 188, 188], fg1: [202, 216, 217],
+	red: [250, 87, 80], green: [117, 185, 56], yellow: [219, 179, 45],
+	blue: [70, 149, 247], magenta: [242, 117, 190], cyan: [65, 199, 185],
+	orange: [237, 134, 73], violet: [134, 119, 207],
+};
+
+const SEL_L = {
+	bg0: [251, 243, 219], bg1: [245, 237, 214], bg2: [239, 231, 207],
+	dim0: [144, 153, 149], fg0: [83, 103, 109], fg1: [58, 77, 83],
+	red: [210, 33, 45], green: [72, 145, 0], yellow: [173, 137, 0],
+	blue: [0, 114, 212], magenta: [202, 72, 152], cyan: [0, 156, 143],
+	orange: [194, 93, 30], violet: [135, 98, 198],
+};
+
+const DARK = { mask1: "rgba(0, 0, 0, 0.5)", mask2: "rgba(0, 0, 0, 0.2)", mask3: "rgba(0, 0, 0, 0.48)", maskPhoto: "rgba(0, 0, 0, 0.88)", skeleton: "rgba(255, 255, 255, 0.08)", inv: "rgba(255, 255, 255, 0.06)", inv2: "rgba(255, 255, 255, 0.08)" };
+const LIGHT = { mask1: "rgba(0, 0, 0, 0.24)", mask2: "rgba(0, 0, 0, 0.12)", mask3: "rgba(0, 0, 0, 0.48)", maskPhoto: "rgba(0, 0, 0, 0.88)", skeleton: "rgba(0, 0, 0, 0.04)", inv: "rgba(0, 0, 0, 0)", inv2: "rgba(0, 0, 0, 0)" };
+
+function buildSolarizedDark() {
+	const P = SOLARIZED;
+	const L2 = mix(P.base02, P.base01, 0.2), L3 = mix(P.base02, P.base01, 0.35), OV = mix(P.base02, P.base01, 0.3);
+	const M2 = mix(P.base02, P.base01, 0.15), M1 = mix(P.base03, P.base02, 0.5), GH = mix(P.base02, P.base01, 0.28);
+	const SOLID = mix(P.base02, P.base01, 0.25), CIT = SOLID, SEGS = M2, SEGU = mix(P.base02, P.base01, 0.08);
+	const CB = mix(P.base03, [0, 0, 0], 0.15), BAN = mix(P.base03, P.base02, 0.6);
+	return {
+		"--dsw-alias-bg-base": hex(...P.base03),
+		"--dsw-alias-bg-layer-1": hex(...P.base02),
+		"--dsw-alias-bg-layer-2": hex(...L2),
+		"--dsw-alias-bg-layer-3": hex(...L3),
+		"--dsw-alias-bg-mask-1": DARK.mask1,
+		"--dsw-alias-bg-mask-2": DARK.mask2,
+		"--dsw-alias-bg-mask-3": DARK.mask3,
+		"--dsw-alias-bg-mask-photo": DARK.maskPhoto,
+		"--dsw-alias-bg-module-platform": hex(...M1),
+		"--dsw-alias-bg-multi-select": hex(...M2),
+		"--dsw-alias-bg-overlay": hex(...OV),
+		"--dsw-alias-bg-skeleton": DARK.skeleton,
+		"--dsw-alias-border-inverted": DARK.inv,
+		"--dsw-alias-border-inverted2": DARK.inv2,
+		"--dsw-alias-border-l1": rgba(P.base1, 0.14),
+		"--dsw-alias-border-l2-darkmode-thin": rgba(P.base1, 0.14),
+		"--dsw-alias-border-l2": rgba(P.base1, 0.26),
+		"--dsw-alias-border-l3": rgba(P.base1, 0.36),
+		"--dsw-alias-border-l4": rgba(P.base1, 0.5),
+		"--dsw-alias-brand-primary-invert": hex(...P.base3),
+		"--dsw-alias-brand-primary-new-colorprimary-new-color": hex(...P.blue),
+		"--dsw-alias-brand-primary": hex(...P.blue),
+		"--dsw-alias-brand-text": "#ffffff",
+		"--dsw-alias-button-contrast-fill": hex(...P.base01),
+		"--dsw-alias-button-elevated-fill": hex(...M1),
+		"--dsw-alias-button-floating-fill": hex(...M2),
+		"--dsw-alias-button-floating-hover": hex(...M2),
+		"--dsw-alias-button-ghost-active-border": rgba(P.base0, 0.4),
+		"--dsw-alias-button-ghost-active-fill": hex(...L2),
+		"--dsw-alias-button-ghost-active-hover": hex(...GH),
+		"--dsw-alias-button-info-fill": hex(...P.cyan),
+		"--dsw-alias-button-info-hover": hex(...mix(P.cyan, P.base1, 0.25)),
+		"--dsw-alias-button-primary-dimmed": hex(...L2),
+		"--dsw-alias-button-primary-fill": hex(...P.blue),
+		"--dsw-alias-button-primary-hover": hex(...mix(P.blue, P.base1, 0.25)),
+		"--dsw-alias-button-tool-bar-fill": rgba(P.base01, 0.5),
+		"--dsw-alias-button-tool-bar-fill-invisible": rgba(P.base01, 0.36),
+		"--dsw-alias-button-tool-bar-hover": rgba(P.base01, 0.6),
+		"--dsw-alias-interactive-bg-active": rgba(P.blue, 0.2),
+		"--dsw-alias-interactive-bg-hover-accent": rgba(P.blue, 0.28),
+		"--dsw-alias-interactive-bg-hover-danger": rgba(P.red, 0.15),
+		"--dsw-alias-interactive-bg-hover-solid": hex(...SOLID),
+		"--dsw-alias-interactive-bg-hover": rgba(P.blue, 0.12),
+		"--dsw-alias-label-caption": hex(...P.base01),
+		"--dsw-alias-label-dimmed": hex(...P.base01),
+		"--dsw-alias-label-primary-bluish": hex(...mix(P.base1, P.blue, 0.25)),
+		"--dsw-alias-label-primary-dimmed": hex(...mix(P.base1, P.base0, 0.5)),
+		"--dsw-alias-label-primary-foreground": hex(...P.base03),
+		"--dsw-alias-label-primary-inverted": hex(...P.base3),
+		"--dsw-alias-label-primary": hex(...P.base1),
+		"--dsw-alias-label-secondary": hex(...P.base0),
+		"--dsw-alias-label-tertiary": hex(...P.base00),
+		"--dsw-alias-markdown-citation": hex(...CIT),
+		"--dsw-alias-markdown-code-block-banner": hex(...BAN),
+		"--dsw-alias-markdown-code-block": hex(...CB),
+		"--dsw-alias-markdown-code-segment-selected": hex(...SEGS),
+		"--dsw-alias-markdown-code-segment-unselected": hex(...SEGU),
+		"--dsw-alias-markdown-inline-code": hex(...P.base02),
+		"--dsw-alias-markdown-placeholder": hex(...M1),
+		"--dsw-alias-markdown-tag": hex(...M2),
+		"--dsw-alias-scrollbar-bg-l1": hex(...L2),
+		"--dsw-alias-scrollbar-bg-l2": hex(...GH),
+		"--dsw-alias-scrollbar-hover-l1": hex(...mix(P.base02, P.base01, 0.45)),
+		"--dsw-alias-scrollbar-hover-l2": hex(...mix(P.base02, P.base01, 0.5)),
+		"--dsw-alias-state-business-primary": hex(...P.blue),
+		"--dsw-alias-state-business-tertiary": hex(...L2),
+		"--dsw-alias-state-error-primary": hex(...P.red),
+		"--dsw-alias-state-error-secondary": hex(...mix(P.red, P.base1, 0.25)),
+		"--dsw-alias-state-success-primary": hex(...P.green),
+		"--dsw-alias-state-success-secondary": hex(...mix(P.green, P.base1, 0.3)),
+		"--dsw-alias-state-success-tertiary": hex(...mix(P.base02, P.green, 0.15)),
+		"--dsw-alias-state-warn-label": hex(...P.yellow),
+		"--dsw-alias-state-warn-primary": hex(...mix(P.yellow, P.base1, 0.2)),
+		"--dsw-alias-state-warn-secondary": hex(...mix(P.yellow, P.base1, 0.35)),
+		"--dsw-alias-state-warn-tertiary": hex(...mix(P.base02, P.yellow, 0.12)),
+		"--dsw-alias-toast-bg": hex(...SOLID),
+		"--dsw-alias-tooltip-bg": hex(...L3),
+		"--dsw-specific-bubble": hex(...mix(P.base02, P.blue, 0.1)),
+		"--dsw-specific-bubble-highlight": hex(...mix(P.base02, P.blue, 0.22)),
+		"--dsw-specific-input-major": hex(...P.base02),
+		"--dsw-specific-login-input": hex(...SEGU),
+		"--dsw-specific-menu": hex(...L3),
+		"--dsw-specific-selector": hex(...SEGU),
+		"--dsw-specific-sidebar-fill": hex(...P.base03),
+		"--dsw-specific-sidebar-nav-item-active-accent": hex(...mix(P.base02, P.blue, 0.3)),
+		"--dsw-specific-sidebar-nav-item-active": hex(...SOLID),
+		"--dsw-specific-sidebar-nav-item-hover": hex(...mix(P.base03, P.base02, 0.6)),
+		"--dsw-specific-tip": hex(...M1),
+		"--shiki-foreground": hex(...P.base0),
+		"--shiki-background": hex(...CB),
+		"--shiki-token-constant": hex(...P.cyan),
+		"--shiki-token-string": hex(...P.cyan),
+		"--shiki-token-comment": hex(...P.base01),
+		"--shiki-token-keyword": hex(...P.green),
+		"--shiki-token-parameter": hex(...P.orange),
+		"--shiki-token-function": hex(...P.blue),
+		"--shiki-token-string-expression": hex(...P.cyan),
+		"--shiki-token-punctuation": hex(...P.base00),
+		"--shiki-token-link": hex(...P.violet),
+	};
+}
+
+function buildSolarizedLight() {
+	const P = SOLARIZED;
+	const L2 = mix(P.base2, P.base1, 0.12), L3 = mix(P.base2, P.base1, 0.22), OV = mix(P.base2, P.base1, 0.18);
+	const M2 = mix(P.base2, P.base1, 0.08), M1 = mix(P.base3, P.base2, 0.5), GH = mix(P.base2, P.base1, 0.25);
+	const SOLID = L2, CIT = L2, SEGS = mix(P.base3, [255, 255, 255], 0.6), SEGU = L2;
+	const WHT6 = mix(P.base3, [255, 255, 255], 0.6), WHT4 = mix(P.base3, [255, 255, 255], 0.4);
+	const CB = mix(P.base2, P.base1, 0.06), BAN = mix(P.base2, P.base1, 0.1);
+	return {
+		"--dsw-alias-bg-base": hex(...P.base3),
+		"--dsw-alias-bg-layer-1": hex(...P.base2),
+		"--dsw-alias-bg-layer-2": hex(...L2),
+		"--dsw-alias-bg-layer-3": hex(...L3),
+		"--dsw-alias-bg-mask-1": LIGHT.mask1,
+		"--dsw-alias-bg-mask-2": LIGHT.mask2,
+		"--dsw-alias-bg-mask-3": LIGHT.mask3,
+		"--dsw-alias-bg-mask-photo": LIGHT.maskPhoto,
+		"--dsw-alias-bg-module-platform": hex(...M1),
+		"--dsw-alias-bg-multi-select": hex(...M2),
+		"--dsw-alias-bg-overlay": hex(...OV),
+		"--dsw-alias-bg-skeleton": LIGHT.skeleton,
+		"--dsw-alias-border-inverted": LIGHT.inv,
+		"--dsw-alias-border-inverted2": LIGHT.inv2,
+		"--dsw-alias-border-l1": rgba(P.base00, 0.14),
+		"--dsw-alias-border-l2-darkmode-thin": rgba(P.base00, 0.2),
+		"--dsw-alias-border-l2": rgba(P.base00, 0.22),
+		"--dsw-alias-border-l3": rgba(P.base00, 0.32),
+		"--dsw-alias-border-l4": rgba(P.base00, 0.45),
+		"--dsw-alias-brand-primary-invert": hex(...P.base03),
+		"--dsw-alias-brand-primary-new-colorprimary-new-color": hex(...P.blue),
+		"--dsw-alias-brand-primary": hex(...P.blue),
+		"--dsw-alias-brand-text": "#ffffff",
+		"--dsw-alias-button-contrast-fill": hex(...P.base1),
+		"--dsw-alias-button-elevated-fill": hex(...WHT6),
+		"--dsw-alias-button-floating-fill": hex(...WHT6),
+		"--dsw-alias-button-floating-hover": hex(...WHT4),
+		"--dsw-alias-button-ghost-active-border": rgba(P.base00, 0.35),
+		"--dsw-alias-button-ghost-active-fill": hex(...OV),
+		"--dsw-alias-button-ghost-active-hover": hex(...GH),
+		"--dsw-alias-button-info-fill": hex(...P.cyan),
+		"--dsw-alias-button-info-hover": hex(...mix(P.cyan, P.base3, 0.25)),
+		"--dsw-alias-button-primary-dimmed": hex(...L2),
+		"--dsw-alias-button-primary-fill": hex(...P.blue),
+		"--dsw-alias-button-primary-hover": hex(...mix(P.blue, P.base3, 0.18)),
+		"--dsw-alias-button-tool-bar-fill": rgba(P.base00, 0.5),
+		"--dsw-alias-button-tool-bar-fill-invisible": rgba(P.base00, 0.36),
+		"--dsw-alias-button-tool-bar-hover": rgba(P.base00, 0.6),
+		"--dsw-alias-interactive-bg-active": rgba(P.blue, 0.16),
+		"--dsw-alias-interactive-bg-hover-accent": rgba(P.blue, 0.22),
+		"--dsw-alias-interactive-bg-hover-danger": rgba(P.red, 0.06),
+		"--dsw-alias-interactive-bg-hover-solid": hex(...SOLID),
+		"--dsw-alias-interactive-bg-hover": rgba(P.blue, 0.1),
+		"--dsw-alias-label-caption": hex(...P.base00),
+		"--dsw-alias-label-dimmed": hex(...mix(P.base2, P.base1, 0.3)),
+		"--dsw-alias-label-primary-bluish": hex(...mix(P.base01, P.blue, 0.15)),
+		"--dsw-alias-label-primary-dimmed": hex(...mix(P.base00, P.base0, 0.5)),
+		"--dsw-alias-label-primary-foreground": hex(...P.base3),
+		"--dsw-alias-label-primary-inverted": hex(...P.base03),
+		"--dsw-alias-label-primary": hex(...P.base01),
+		"--dsw-alias-label-secondary": hex(...P.base00),
+		"--dsw-alias-label-tertiary": hex(...P.base0),
+		"--dsw-alias-markdown-citation": hex(...CIT),
+		"--dsw-alias-markdown-code-block-banner": hex(...BAN),
+		"--dsw-alias-markdown-code-block": hex(...CB),
+		"--dsw-alias-markdown-code-segment-selected": hex(...SEGS),
+		"--dsw-alias-markdown-code-segment-unselected": hex(...SEGU),
+		"--dsw-alias-markdown-inline-code": hex(...M2),
+		"--dsw-alias-markdown-placeholder": hex(...M1),
+		"--dsw-alias-markdown-tag": hex(...L2),
+		"--dsw-alias-scrollbar-bg-l1": hex(...L3),
+		"--dsw-alias-scrollbar-bg-l2": hex(...GH),
+		"--dsw-alias-scrollbar-hover-l1": hex(...mix(P.base2, P.base1, 0.38)),
+		"--dsw-alias-scrollbar-hover-l2": hex(...mix(P.base2, P.base1, 0.45)),
+		"--dsw-alias-state-business-primary": hex(...P.blue),
+		"--dsw-alias-state-business-tertiary": hex(...mix(P.base2, P.blue, 0.15)),
+		"--dsw-alias-state-error-primary": hex(...P.red),
+		"--dsw-alias-state-error-secondary": hex(...mix(P.red, P.base3, 0.3)),
+		"--dsw-alias-state-success-primary": hex(...P.green),
+		"--dsw-alias-state-success-secondary": hex(...mix(P.green, P.base3, 0.25)),
+		"--dsw-alias-state-success-tertiary": hex(...mix(P.base2, P.green, 0.12)),
+		"--dsw-alias-state-warn-label": hex(...mix(P.yellow, P.base00, 0.1)),
+		"--dsw-alias-state-warn-primary": hex(...P.yellow),
+		"--dsw-alias-state-warn-secondary": hex(...mix(P.yellow, P.base3, 0.25)),
+		"--dsw-alias-state-warn-tertiary": hex(...mix(P.base2, P.yellow, 0.12)),
+		"--dsw-alias-toast-bg": hex(...GH),
+		"--dsw-alias-tooltip-bg": hex(...mix(P.base2, P.base1, 0.3)),
+		"--dsw-specific-bubble": hex(...mix(P.base3, P.blue, 0.08)),
+		"--dsw-specific-bubble-highlight": hex(...mix(P.base2, P.blue, 0.2)),
+		"--dsw-specific-input-major": hex(...P.base3),
+		"--dsw-specific-login-input": hex(...M1),
+		"--dsw-specific-menu": hex(...L3),
+		"--dsw-specific-selector": hex(...M1),
+		"--dsw-specific-sidebar-fill": hex(...P.base2),
+		"--dsw-specific-sidebar-nav-item-active-accent": hex(...mix(P.base2, P.blue, 0.15)),
+		"--dsw-specific-sidebar-nav-item-active": hex(...L2),
+		"--dsw-specific-sidebar-nav-item-hover": hex(...mix(P.base2, P.base1, 0.06)),
+		"--dsw-specific-tip": hex(...M1),
+		"--shiki-foreground": hex(...P.base01),
+		"--shiki-background": hex(...CB),
+		"--shiki-token-constant": hex(...P.cyan),
+		"--shiki-token-string": hex(...P.cyan),
+		"--shiki-token-comment": hex(...P.base1),
+		"--shiki-token-keyword": hex(...P.green),
+		"--shiki-token-parameter": hex(...P.orange),
+		"--shiki-token-function": hex(...P.blue),
+		"--shiki-token-string-expression": hex(...P.cyan),
+		"--shiki-token-punctuation": hex(...P.base00),
+		"--shiki-token-link": hex(...P.violet),
+	};
+}
+
+function buildSelenizedDark() {
+	const P = SEL_D;
+	const L2 = mix(P.bg2, P.dim0, 0.2), L3 = mix(P.bg2, P.dim0, 0.35), OV = mix(P.bg2, P.dim0, 0.3);
+	const M2 = mix(P.bg1, P.bg2, 0.5), M1 = mix(P.bg0, P.bg1, 0.5), GH = mix(P.bg2, P.dim0, 0.28);
+	const SOLID = mix(P.bg2, P.dim0, 0.25), CIT = L2, SEGS = mix(P.bg2, P.dim0, 0.15), SEGU = mix(P.bg0, P.bg1, 0.4);
+	const ELEV = mix(P.bg2, P.dim0, 0.15), FL = mix(P.bg2, P.dim0, 0.12), FLH = mix(P.bg2, P.dim0, 0.2);
+	const CB = mix(P.bg0, [0, 0, 0], 0.15);
+	return {
+		"--dsw-alias-bg-base": hex(...P.bg0),
+		"--dsw-alias-bg-layer-1": hex(...P.bg1),
+		"--dsw-alias-bg-layer-2": hex(...P.bg2),
+		"--dsw-alias-bg-layer-3": hex(...L3),
+		"--dsw-alias-bg-mask-1": DARK.mask1,
+		"--dsw-alias-bg-mask-2": DARK.mask2,
+		"--dsw-alias-bg-mask-3": DARK.mask3,
+		"--dsw-alias-bg-mask-photo": DARK.maskPhoto,
+		"--dsw-alias-bg-module-platform": hex(...M1),
+		"--dsw-alias-bg-multi-select": hex(...M2),
+		"--dsw-alias-bg-overlay": hex(...OV),
+		"--dsw-alias-bg-skeleton": DARK.skeleton,
+		"--dsw-alias-border-inverted": DARK.inv,
+		"--dsw-alias-border-inverted2": DARK.inv2,
+		"--dsw-alias-border-l1": rgba(P.fg0, 0.12),
+		"--dsw-alias-border-l2-darkmode-thin": rgba(P.fg0, 0.12),
+		"--dsw-alias-border-l2": rgba(P.fg0, 0.22),
+		"--dsw-alias-border-l3": rgba(P.fg0, 0.32),
+		"--dsw-alias-border-l4": rgba(P.fg0, 0.45),
+		"--dsw-alias-brand-primary-invert": hex(...P.fg1),
+		"--dsw-alias-brand-primary-new-colorprimary-new-color": hex(...P.blue),
+		"--dsw-alias-brand-primary": hex(...P.blue),
+		"--dsw-alias-brand-text": "#ffffff",
+		"--dsw-alias-button-contrast-fill": hex(...P.dim0),
+		"--dsw-alias-button-elevated-fill": hex(...ELEV),
+		"--dsw-alias-button-floating-fill": hex(...FL),
+		"--dsw-alias-button-floating-hover": hex(...FLH),
+		"--dsw-alias-button-ghost-active-border": rgba(P.fg0, 0.4),
+		"--dsw-alias-button-ghost-active-fill": hex(...FLH),
+		"--dsw-alias-button-ghost-active-hover": hex(...GH),
+		"--dsw-alias-button-info-fill": hex(...P.cyan),
+		"--dsw-alias-button-info-hover": hex(...mix(P.cyan, P.fg1, 0.25)),
+		"--dsw-alias-button-primary-dimmed": hex(...FLH),
+		"--dsw-alias-button-primary-fill": hex(...P.blue),
+		"--dsw-alias-button-primary-hover": hex(...mix(P.blue, P.fg1, 0.22)),
+		"--dsw-alias-button-tool-bar-fill": rgba(P.dim0, 0.5),
+		"--dsw-alias-button-tool-bar-fill-invisible": rgba(P.dim0, 0.36),
+		"--dsw-alias-button-tool-bar-hover": rgba(P.dim0, 0.6),
+		"--dsw-alias-interactive-bg-active": rgba(P.blue, 0.2),
+		"--dsw-alias-interactive-bg-hover-accent": rgba(P.blue, 0.28),
+		"--dsw-alias-interactive-bg-hover-danger": rgba(P.red, 0.15),
+		"--dsw-alias-interactive-bg-hover-solid": hex(...SOLID),
+		"--dsw-alias-interactive-bg-hover": rgba(P.blue, 0.12),
+		"--dsw-alias-label-caption": hex(...P.dim0),
+		"--dsw-alias-label-dimmed": hex(...OV),
+		"--dsw-alias-label-primary-bluish": hex(...mix(P.fg1, P.blue, 0.2)),
+		"--dsw-alias-label-primary-dimmed": hex(...mix(P.fg0, P.fg1, 0.5)),
+		"--dsw-alias-label-primary-foreground": hex(...P.bg0),
+		"--dsw-alias-label-primary-inverted": hex(...P.bg0),
+		"--dsw-alias-label-primary": hex(...P.fg1),
+		"--dsw-alias-label-secondary": hex(...P.fg0),
+		"--dsw-alias-label-tertiary": hex(...P.dim0),
+		"--dsw-alias-markdown-citation": hex(...CIT),
+		"--dsw-alias-markdown-code-block-banner": hex(...M1),
+		"--dsw-alias-markdown-code-block": hex(...CB),
+		"--dsw-alias-markdown-code-segment-selected": hex(...SEGS),
+		"--dsw-alias-markdown-code-segment-unselected": hex(...SEGU),
+		"--dsw-alias-markdown-inline-code": hex(...P.bg1),
+		"--dsw-alias-markdown-placeholder": hex(...M1),
+		"--dsw-alias-markdown-tag": hex(...SEGS),
+		"--dsw-alias-scrollbar-bg-l1": hex(...SEGS),
+		"--dsw-alias-scrollbar-bg-l2": hex(...FLH),
+		"--dsw-alias-scrollbar-hover-l1": hex(...mix(P.bg2, P.dim0, 0.4)),
+		"--dsw-alias-scrollbar-hover-l2": hex(...mix(P.bg2, P.dim0, 0.45)),
+		"--dsw-alias-state-business-primary": hex(...P.blue),
+		"--dsw-alias-state-business-tertiary": hex(...mix(P.bg2, P.blue, 0.15)),
+		"--dsw-alias-state-error-primary": hex(...P.red),
+		"--dsw-alias-state-error-secondary": hex(...mix(P.red, P.fg1, 0.25)),
+		"--dsw-alias-state-success-primary": hex(...P.green),
+		"--dsw-alias-state-success-secondary": hex(...mix(P.green, P.fg1, 0.3)),
+		"--dsw-alias-state-success-tertiary": hex(...mix(P.bg2, P.green, 0.15)),
+		"--dsw-alias-state-warn-label": hex(...P.yellow),
+		"--dsw-alias-state-warn-primary": hex(...P.yellow),
+		"--dsw-alias-state-warn-secondary": hex(...mix(P.yellow, P.fg1, 0.3)),
+		"--dsw-alias-state-warn-tertiary": hex(...mix(P.bg2, P.yellow, 0.15)),
+		"--dsw-alias-toast-bg": hex(...SOLID),
+		"--dsw-alias-tooltip-bg": hex(...L3),
+		"--dsw-specific-bubble": hex(...mix(P.bg1, P.blue, 0.1)),
+		"--dsw-specific-bubble-highlight": hex(...mix(P.bg1, P.blue, 0.25)),
+		"--dsw-specific-input-major": hex(...P.bg1),
+		"--dsw-specific-login-input": hex(...SEGU),
+		"--dsw-specific-menu": hex(...L3),
+		"--dsw-specific-selector": hex(...SEGU),
+		"--dsw-specific-sidebar-fill": hex(...P.bg0),
+		"--dsw-specific-sidebar-nav-item-active-accent": hex(...mix(P.bg2, P.blue, 0.2)),
+		"--dsw-specific-sidebar-nav-item-active": hex(...FLH),
+		"--dsw-specific-sidebar-nav-item-hover": hex(...mix(P.bg0, P.bg1, 0.6)),
+		"--dsw-specific-tip": hex(...M1),
+		"--shiki-foreground": hex(...P.fg0),
+		"--shiki-background": hex(...CB),
+		"--shiki-token-constant": hex(...P.cyan),
+		"--shiki-token-string": hex(...P.green),
+		"--shiki-token-comment": hex(...P.dim0),
+		"--shiki-token-keyword": hex(...P.violet),
+		"--shiki-token-parameter": hex(...P.orange),
+		"--shiki-token-function": hex(...P.blue),
+		"--shiki-token-string-expression": hex(...P.green),
+		"--shiki-token-punctuation": hex(...P.dim0),
+		"--shiki-token-link": hex(...P.yellow),
+	};
+}
+
+function buildSelenizedLight() {
+	const P = SEL_L;
+	const L2 = mix(P.bg1, P.dim0, 0.15), L3 = mix(P.bg1, P.dim0, 0.28), OV = mix(P.bg1, P.dim0, 0.24);
+	const M2 = mix(P.bg1, P.bg2, 0.5), M1 = mix(P.bg0, P.bg1, 0.5), GH = mix(P.bg1, P.dim0, 0.25);
+	const SOLID = L2, CIT = L2, SEGS = mix(P.bg0, [255, 255, 255], 0.5), SEGU = mix(P.bg1, P.dim0, 0.12);
+	const WHT5 = mix(P.bg0, [255, 255, 255], 0.5), WHT3 = mix(P.bg0, [255, 255, 255], 0.3);
+	const CB = mix(P.bg1, P.dim0, 0.06);
+	return {
+		"--dsw-alias-bg-base": hex(...P.bg0),
+		"--dsw-alias-bg-layer-1": hex(...P.bg1),
+		"--dsw-alias-bg-layer-2": hex(...L2),
+		"--dsw-alias-bg-layer-3": hex(...L3),
+		"--dsw-alias-bg-mask-1": LIGHT.mask1,
+		"--dsw-alias-bg-mask-2": LIGHT.mask2,
+		"--dsw-alias-bg-mask-3": LIGHT.mask3,
+		"--dsw-alias-bg-mask-photo": LIGHT.maskPhoto,
+		"--dsw-alias-bg-module-platform": hex(...M1),
+		"--dsw-alias-bg-multi-select": hex(...M2),
+		"--dsw-alias-bg-overlay": hex(...OV),
+		"--dsw-alias-bg-skeleton": LIGHT.skeleton,
+		"--dsw-alias-border-inverted": LIGHT.inv,
+		"--dsw-alias-border-inverted2": LIGHT.inv2,
+		"--dsw-alias-border-l1": rgba(P.fg0, 0.12),
+		"--dsw-alias-border-l2-darkmode-thin": rgba(P.fg0, 0.18),
+		"--dsw-alias-border-l2": rgba(P.fg0, 0.22),
+		"--dsw-alias-border-l3": rgba(P.fg0, 0.32),
+		"--dsw-alias-border-l4": rgba(P.fg0, 0.45),
+		"--dsw-alias-brand-primary-invert": hex(...P.bg0),
+		"--dsw-alias-brand-primary-new-colorprimary-new-color": hex(...P.blue),
+		"--dsw-alias-brand-primary": hex(...P.blue),
+		"--dsw-alias-brand-text": "#ffffff",
+		"--dsw-alias-button-contrast-fill": hex(...P.fg0),
+		"--dsw-alias-button-elevated-fill": hex(...WHT5),
+		"--dsw-alias-button-floating-fill": hex(...WHT5),
+		"--dsw-alias-button-floating-hover": hex(...WHT3),
+		"--dsw-alias-button-ghost-active-border": rgba(P.fg0, 0.35),
+		"--dsw-alias-button-ghost-active-fill": hex(...OV),
+		"--dsw-alias-button-ghost-active-hover": hex(...GH),
+		"--dsw-alias-button-info-fill": hex(...P.cyan),
+		"--dsw-alias-button-info-hover": hex(...mix(P.cyan, P.bg0, 0.2)),
+		"--dsw-alias-button-primary-dimmed": hex(...L2),
+		"--dsw-alias-button-primary-fill": hex(...P.blue),
+		"--dsw-alias-button-primary-hover": hex(...mix(P.blue, P.bg0, 0.15)),
+		"--dsw-alias-button-tool-bar-fill": rgba(P.fg0, 0.4),
+		"--dsw-alias-button-tool-bar-fill-invisible": rgba(P.fg0, 0.3),
+		"--dsw-alias-button-tool-bar-hover": rgba(P.fg0, 0.5),
+		"--dsw-alias-interactive-bg-active": rgba(P.blue, 0.16),
+		"--dsw-alias-interactive-bg-hover-accent": rgba(P.blue, 0.22),
+		"--dsw-alias-interactive-bg-hover-danger": rgba(P.red, 0.06),
+		"--dsw-alias-interactive-bg-hover-solid": hex(...SOLID),
+		"--dsw-alias-interactive-bg-hover": rgba(P.blue, 0.1),
+		"--dsw-alias-label-caption": hex(...P.dim0),
+		"--dsw-alias-label-dimmed": hex(...L3),
+		"--dsw-alias-label-primary-bluish": hex(...mix(P.fg1, P.blue, 0.15)),
+		"--dsw-alias-label-primary-dimmed": hex(...mix(P.fg0, P.fg1, 0.5)),
+		"--dsw-alias-label-primary-foreground": hex(...P.bg0),
+		"--dsw-alias-label-primary-inverted": hex(...P.bg0),
+		"--dsw-alias-label-primary": hex(...P.fg1),
+		"--dsw-alias-label-secondary": hex(...P.fg0),
+		"--dsw-alias-label-tertiary": hex(...P.dim0),
+		"--dsw-alias-markdown-citation": hex(...CIT),
+		"--dsw-alias-markdown-code-block-banner": hex(...mix(P.bg1, P.dim0, 0.1)),
+		"--dsw-alias-markdown-code-block": hex(...CB),
+		"--dsw-alias-markdown-code-segment-selected": hex(...SEGS),
+		"--dsw-alias-markdown-code-segment-unselected": hex(...SEGU),
+		"--dsw-alias-markdown-inline-code": hex(...M2),
+		"--dsw-alias-markdown-placeholder": hex(...M1),
+		"--dsw-alias-markdown-tag": hex(...SEGU),
+		"--dsw-alias-scrollbar-bg-l1": hex(...GH),
+		"--dsw-alias-scrollbar-bg-l2": hex(...L3),
+		"--dsw-alias-scrollbar-hover-l1": hex(...mix(P.bg1, P.dim0, 0.4)),
+		"--dsw-alias-scrollbar-hover-l2": hex(...mix(P.bg1, P.dim0, 0.45)),
+		"--dsw-alias-state-business-primary": hex(...P.blue),
+		"--dsw-alias-state-business-tertiary": hex(...mix(P.bg1, P.blue, 0.12)),
+		"--dsw-alias-state-error-primary": hex(...P.red),
+		"--dsw-alias-state-error-secondary": hex(...mix(P.red, P.bg0, 0.3)),
+		"--dsw-alias-state-success-primary": hex(...P.green),
+		"--dsw-alias-state-success-secondary": hex(...mix(P.green, P.bg0, 0.3)),
+		"--dsw-alias-state-success-tertiary": hex(...mix(P.bg1, P.green, 0.12)),
+		"--dsw-alias-state-warn-label": hex(...P.yellow),
+		"--dsw-alias-state-warn-primary": hex(...P.yellow),
+		"--dsw-alias-state-warn-secondary": hex(...mix(P.yellow, P.bg0, 0.25)),
+		"--dsw-alias-state-warn-tertiary": hex(...mix(P.bg1, P.yellow, 0.12)),
+		"--dsw-alias-toast-bg": hex(...GH),
+		"--dsw-alias-tooltip-bg": hex(...L3),
+		"--dsw-specific-bubble": hex(...mix(P.bg0, P.blue, 0.06)),
+		"--dsw-specific-bubble-highlight": hex(...mix(P.bg1, P.blue, 0.2)),
+		"--dsw-specific-input-major": hex(...P.bg0),
+		"--dsw-specific-login-input": hex(...M1),
+		"--dsw-specific-menu": hex(...L3),
+		"--dsw-specific-selector": hex(...M1),
+		"--dsw-specific-sidebar-fill": hex(...P.bg1),
+		"--dsw-specific-sidebar-nav-item-active-accent": hex(...mix(P.bg1, P.blue, 0.14)),
+		"--dsw-specific-sidebar-nav-item-active": hex(...L2),
+		"--dsw-specific-sidebar-nav-item-hover": hex(...mix(P.bg1, P.dim0, 0.06)),
+		"--dsw-specific-tip": hex(...M1),
+		"--shiki-foreground": hex(...P.fg0),
+		"--shiki-background": hex(...CB),
+		"--shiki-token-constant": hex(...P.cyan),
+		"--shiki-token-string": hex(...P.green),
+		"--shiki-token-comment": hex(...P.dim0),
+		"--shiki-token-keyword": hex(...P.violet),
+		"--shiki-token-parameter": hex(...P.orange),
+		"--shiki-token-function": hex(...P.blue),
+		"--shiki-token-string-expression": hex(...P.green),
+		"--shiki-token-punctuation": hex(...P.dim0),
+		"--shiki-token-link": hex(...P.yellow),
+	};
+}
+
+const THEMES = [
+	{ id: "solarized-dark", colorScheme: "dark", tokens: buildSolarizedDark() },
+	{ id: "solarized-light", colorScheme: "light", tokens: buildSolarizedLight() },
+	{ id: "selenized-dark", colorScheme: "dark", tokens: buildSelenizedDark() },
+	{ id: "selenized-light", colorScheme: "light", tokens: buildSelenizedLight() },
+];
+
+function tokensBlock() {
+	const out = [];
+	for (const theme of THEMES) {
+		out.push(`\t{\n\t\tid: "${theme.id}",\n\t\tcolorScheme: "${theme.colorScheme}",\n\t\ttokens: {`);
+		for (const [key, value] of Object.entries(theme.tokens)) {
+			out.push(`\t\t\t"${key}": "${value}",`);
+		}
+		out.push(`\t\t}\n\t},`);
+	}
+	return out.join("\n");
+}
+
+const CLIENT_TEMPLATE = `// dsh-Solarized — browser half (client plugin bundle).
+//
+// Loaded by dsh-client-modules at /plugins/dsh-solarized/client.js and
+// executed through the vendored cordis Loader's lazy-CJS module table
+// (window.__ModuleLoader__.load). The factory body is plain CJS with
+// require() resolved against the shell's module table — the same shape the
+// shipped ui-* packages' tsdown bundles emit.
+//
+// Persistence note: the chosen theme is stored in localStorage. DSH's Host
+// settings wire only exposes an allowlisted set of namespaces to browser
+// clients (dsh-host-apiproxy's WEB_SETTINGS_NAMESPACES), so a third-party
+// namespace would answer "settings-not-exposed"; the product itself keeps
+// remote browser preferences process-local, and localStorage matches that
+// boundary for a visual preference while surviving reloads on the same
+// origin.
+//
+// Token tables are generated by scripts/gen-client.mjs from the Solarized
+// (Ethan Schoonover, MIT) and Selenized (Jan Warchol, MIT) palettes; the
+// key set mirrors the alias/specific/shiki sheets shipped by
+// @deepseek-ai/dsh-client-ui-theme.
+window.__ModuleLoader__.load({
+	id: "dsh-solarized",
+	factory: (require) => {
+		var module = { exports: {} };
+		var exports = module.exports;
+		Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
+		let react_jsx_runtime = require("react/jsx-runtime");
+		let _react = require("react");
+		let _runtime_client = require("@deepseek-ai/dsh-client-runtime/client");
+
+		//#region dsh-solarized: definitions
+		/** The settings row's locale namespace. */
+		const SETTINGS_NS = "settings.solarized";
+		/** localStorage key holding the selected theme id. */
+		const STORAGE_KEY = "dsh-solarized:theme";
+		/** Sentinel meaning "no custom theme — follow the built-in appearance". */
+		const DEFAULT_THEME = "system";
+
+		/**
+		 * The four curated themes. Each is a third-party theme for the built-in
+		 * ThemeRuntime: an id, the base palette it builds on (colorScheme drives
+		 * body[data-ds-dark-theme]), and token overrides applied as inline
+		 * custom properties on <body> by ui-layout's ThemePresenter. Values are
+		 * concrete colors (no var() indirection); the --shiki-* entries restore
+		 * the canonical Solarized/Selenized code palette in markdown code blocks.
+		 */
+		const THEMES = [
+__TOKENS__
+		];
+
+		/** Simplified Chinese dictionary (the key-set source of truth). */
+		const zh = {
+			"theme.title": "Solarized / Selenized 主题",
+			"theme.default": "默认",
+			"theme.solarizedDark": "Solarized 深色",
+			"theme.solarizedLight": "Solarized 浅色",
+			"theme.selenizedDark": "Selenized 深色",
+			"theme.selenizedLight": "Selenized 浅色"
+		};
+
+		/** English dictionary, checked complete against the zh key set. */
+		const en = {
+			"theme.title": "Solarized / Selenized themes",
+			"theme.default": "Default",
+			"theme.solarizedDark": "Solarized Dark",
+			"theme.solarizedLight": "Solarized Light",
+			"theme.selenizedDark": "Selenized Dark",
+			"theme.selenizedLight": "Selenized Light"
+		};
+
+		/** Theme id → locale key mapping for the picker cards. */
+		const THEME_LOCALE = {
+			"solarized-dark": "theme.solarizedDark",
+			"solarized-light": "theme.solarizedLight",
+			"selenized-dark": "theme.selenizedDark",
+			"selenized-light": "theme.selenizedLight"
+		};
+		//#endregion
+
+		//#region dsh-solarized: persistence
+		/** Read a localStorage string value (null on absence or error). */
+		function readStorage(key) {
+			try {
+				const value = window.localStorage.getItem(key);
+				return typeof value === "string" ? value : null;
+			} catch {
+				return null;
+			}
+		}
+
+		/** Write (or remove with null) a localStorage value. */
+		function writeStorage(key, value) {
+			try {
+				if (value === null) window.localStorage.removeItem(key);
+				else window.localStorage.setItem(key, value);
+			} catch {
+				// storage unavailable / quota — the preference stays process-local
+			}
+		}
+
+		/** Saved theme id (may be unknown/absent). */
+		function readSavedTheme() {
+			return readStorage(STORAGE_KEY);
+		}
+
+		/** Persist a theme choice; DEFAULT_THEME clears the stored value. */
+		function writeSavedTheme(id) {
+			writeStorage(STORAGE_KEY, id === DEFAULT_THEME ? null : id);
+		}
+		//#endregion
+
+		//#region dsh-solarized: settings row store
+		/**
+		 * Theme row slot store: a mirror of the theme service snapshot. The
+		 * plugin's theme/change listener is the only writer; the row component
+		 * reads via props.useStore.
+		 */
+		function createThemeStore() {
+			return (0, _runtime_client.defineStore)({
+				init: () => ({
+					theme: "system",
+					revision: -1
+				}),
+				actions: {
+					sync: (d, theme, revision) => {
+						if (revision <= d.revision) return;
+						d.theme = theme;
+						d.revision = revision;
+					}
+				}
+			});
+		}
+		//#endregion
+
+		//#region dsh-solarized: settings row
+		/** Inline style sheet for the row (kept dependency-free). */
+		const styles = {
+			group: {
+				borderBottom: "1px solid var(--dsw-alias-border-l2)",
+				display: "flex",
+				flexDirection: "column",
+				gap: "10px",
+				padding: "16px 0"
+			},
+			title: {
+				color: "var(--dsw-alias-label-primary)",
+				fontSize: "14px",
+				fontWeight: 400,
+				lineHeight: "22px"
+			},
+			grid: {
+				display: "flex",
+				flexWrap: "wrap",
+				gap: "10px"
+			},
+			card: {
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				gap: "6px",
+				width: "104px",
+				padding: "3px",
+				borderRadius: "10px",
+				border: "2px solid transparent",
+				background: "transparent",
+				cursor: "pointer",
+				font: "inherit",
+				boxSizing: "border-box"
+			},
+			cardSelected: {
+				borderColor: "var(--dsw-alias-brand-primary)",
+				background: "var(--dsw-alias-interactive-bg-hover)"
+			},
+			cardLabel: {
+				color: "var(--dsw-alias-label-secondary)",
+				fontSize: "12px",
+				lineHeight: "16px",
+				whiteSpace: "nowrap"
+			},
+			cardLabelSelected: {
+				color: "var(--dsw-alias-label-primary)"
+			},
+			swatch: {
+				width: "100%",
+				height: "52px",
+				borderRadius: "8px",
+				boxSizing: "border-box",
+				padding: "8px",
+				display: "flex",
+				flexDirection: "column",
+				justifyContent: "center",
+				gap: "6px"
+			},
+			swatchLine: {
+				height: "7px",
+				borderRadius: "4px"
+			},
+			defaultSwatch: {
+				width: "100%",
+				height: "52px",
+				borderRadius: "8px",
+				boxSizing: "border-box",
+				display: "flex",
+				overflow: "hidden",
+				border: "1px solid var(--dsw-alias-border-l2)"
+			}
+		};
+
+		/** Mini palette preview driven by one theme's token table. */
+		function ThemeSwatch({ tokens }) {
+			return (0, react_jsx_runtime.jsxs)("div", {
+				style: {
+					...styles.swatch,
+					background: tokens["--dsw-alias-bg-layer-1"],
+					border: "1px solid " + tokens["--dsw-alias-border-l2"]
+				},
+				children: [
+					(0, react_jsx_runtime.jsx)("div", {
+						style: {
+							...styles.swatchLine,
+							width: "70%",
+							background: tokens["--dsw-alias-label-primary"],
+							opacity: 0.85
+						}
+					}),
+					(0, react_jsx_runtime.jsx)("div", {
+						style: {
+							...styles.swatchLine,
+							width: "45%",
+							background: tokens["--dsw-alias-brand-primary"]
+						}
+					}),
+					(0, react_jsx_runtime.jsx)("div", {
+						style: {
+							...styles.swatchLine,
+							width: "55%",
+							background: tokens["--dsw-alias-label-secondary"],
+							opacity: 0.55
+						}
+					})
+				]
+			});
+		}
+
+		/** "Default" chip: follow the built-in appearance (light + dark halves). */
+		function DefaultSwatch() {
+			return (0, react_jsx_runtime.jsxs)("div", {
+				style: styles.defaultSwatch,
+				children: [
+					(0, react_jsx_runtime.jsx)("div", { style: { flex: 1, background: "#f4f4f5" } }),
+					(0, react_jsx_runtime.jsx)("div", { style: { flex: 1, background: "#1c1c20" } })
+				]
+			});
+		}
+
+		/** One selectable theme card. */
+		function ThemeCard({ theme, selected, onSelect, t }) {
+			return (0, react_jsx_runtime.jsxs)("button", {
+				type: "button",
+				onClick: onSelect,
+				"aria-pressed": selected,
+				style: {
+					...styles.card,
+					...(selected ? styles.cardSelected : {})
+				},
+				children: [
+					(0, react_jsx_runtime.jsx)(ThemeSwatch, { tokens: theme.tokens }),
+					(0, react_jsx_runtime.jsx)("span", {
+						style: {
+							...styles.cardLabel,
+							...(selected ? styles.cardLabelSelected : {})
+						},
+						children: t(THEME_LOCALE[theme.id])
+					})
+				]
+			});
+		}
+
+		/**
+		 * Theme picker row registered into the Settings → General item slot,
+		 * right after the built-in Appearance row: title + a "Default" chip and
+		 * one swatch card per curated theme.
+		 */
+		function ThemeRow({ t, setTheme, useStore }) {
+			const theme = useStore((s) => s.theme);
+			const selected = THEMES.some((candidate) => candidate.id === theme) ? theme : null;
+			return (0, react_jsx_runtime.jsxs)("div", {
+				style: styles.group,
+				children: [
+					(0, react_jsx_runtime.jsx)("div", {
+						style: styles.title,
+						children: t("theme.title")
+					}),
+					(0, react_jsx_runtime.jsxs)("div", {
+						style: styles.grid,
+						children: [
+							(0, react_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => setTheme(DEFAULT_THEME),
+								"aria-pressed": selected === null,
+								style: {
+									...styles.card,
+									...(selected === null ? styles.cardSelected : {})
+								},
+								children: [
+									(0, react_jsx_runtime.jsx)(DefaultSwatch, {}),
+									(0, react_jsx_runtime.jsx)("span", {
+										style: {
+											...styles.cardLabel,
+											...(selected === null ? styles.cardLabelSelected : {})
+										},
+										children: t("theme.default")
+									})
+								]
+							}),
+							THEMES.map((themeDefinition) => (0, react_jsx_runtime.jsx)(ThemeCard, {
+								theme: themeDefinition,
+								selected: selected === themeDefinition.id,
+								onSelect: () => setTheme(themeDefinition.id),
+								t
+							}, themeDefinition.id))
+						]
+					})
+				]
+			});
+		}
+		//#endregion
+
+		//#region dsh-solarized: client plugin body
+		/**
+		 * Required services: theme runtime (registration and switching), the
+		 * settings slot and locale (the picker row). Persistence is
+		 * localStorage, so no settings transport is needed.
+		 */
+		const inject = [
+			"slots",
+			"locale",
+			"theme"
+		];
+
+		/**
+		 * Client plugin body: register the four themes into the theme runtime,
+		 * restore the saved theme, keep the row store in sync with
+		 * theme/change, and register the picker row into Settings → General.
+		 * @param ctx - client cordis context.
+		 */
+		function apply(ctx) {
+			const disposers = THEMES.map((themeDefinition) => ctx.theme.register(themeDefinition));
+			ctx.effect(() => () => {
+				for (const dispose of disposers) dispose();
+			}, "dsh-solarized: theme registration");
+
+			// Restore the saved theme once (before any user interaction).
+			const saved = readSavedTheme();
+			if (typeof saved === "string" && saved !== DEFAULT_THEME && THEMES.some((themeDefinition) => themeDefinition.id === saved)) {
+				const current = ctx.theme.getTheme().preference;
+				if (current !== saved) ctx.theme.setTheme(saved);
+			}
+
+			const themeStore = createThemeStore();
+			let themeBound;
+			const syncTheme = (snapshot) => {
+				themeBound?.sync(snapshot.preference, snapshot.revision);
+			};
+			ctx.on("theme/change", syncTheme);
+
+			ctx.effect(() => ctx.locale.register(SETTINGS_NS, {
+				zh,
+				en
+			}), "dsh-solarized: settings row dictionaries");
+
+			const themeInjected = (actions) => {
+				themeBound = actions;
+				syncTheme(ctx.theme.getTheme());
+				return {
+					setTheme: (id) => {
+						ctx.theme.setTheme(id);
+						writeSavedTheme(id);
+					}
+				};
+			};
+			ctx.slots.inject("settings.general.item", () => ctx.slots.register({
+				name: "settings.general.item",
+				id: "solarized",
+				order: 20,
+				store: themeStore,
+				locale: SETTINGS_NS,
+				inject: themeInjected
+			}, ThemeRow));
+		}
+		//#endregion
+
+		exports.SETTINGS_NS = SETTINGS_NS;
+		exports.THEMES = THEMES;
+		exports.DEFAULT_THEME = DEFAULT_THEME;
+		exports.apply = apply;
+		exports.inject = inject;
+		return module.exports;
+	}
+});
+`;
+
+writeFileSync(join(root, "lib/client.js"), CLIENT_TEMPLATE.replace("__TOKENS__", tokensBlock()));
+console.log("wrote lib/client.js");
