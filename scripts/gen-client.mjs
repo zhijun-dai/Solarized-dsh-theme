@@ -101,7 +101,7 @@ function buildSolarizedDark() {
 		"--dsw-alias-label-primary-bluish": hex(...mix(P.base1, P.blue, 0.25)),
 		"--dsw-alias-label-primary-dimmed": hex(...mix(P.base1, P.base0, 0.5)),
 		"--dsw-alias-label-primary-foreground": hex(...P.base03),
-		"--dsw-alias-label-primary-inverted": hex(...P.base3),
+		"--dsw-alias-label-primary-inverted": hex(...P.base03),
 		"--dsw-alias-label-primary": hex(...P.base1),
 		"--dsw-alias-label-secondary": hex(...P.base0),
 		"--dsw-alias-label-tertiary": hex(...P.base00),
@@ -211,7 +211,7 @@ function buildSolarizedLight() {
 		"--dsw-alias-label-primary-bluish": hex(...mix(P.base01, P.blue, 0.15)),
 		"--dsw-alias-label-primary-dimmed": hex(...mix(P.base00, P.base0, 0.5)),
 		"--dsw-alias-label-primary-foreground": hex(...P.base3),
-		"--dsw-alias-label-primary-inverted": hex(...P.base03),
+		"--dsw-alias-label-primary-inverted": hex(...P.base3),
 		"--dsw-alias-label-primary": hex(...P.base01),
 		"--dsw-alias-label-secondary": hex(...P.base00),
 		"--dsw-alias-label-tertiary": hex(...P.base0),
@@ -554,32 +554,28 @@ window.__ModuleLoader__.load({
 __TOKENS__
 		];
 
-		/** Simplified Chinese dictionary (the key-set source of truth). */
+		/**
+		 * Simplified Chinese dictionary (the key-set source of truth). Theme
+		 * labels live under "theme.<id>" so the picker cards derive their key
+		 * directly from the theme id — no id→key mapping to keep in sync.
+		 */
 		const zh = {
 			"theme.title": "Solarized / Selenized 主题",
 			"theme.default": "默认",
-			"theme.solarizedDark": "Solarized 深色",
-			"theme.solarizedLight": "Solarized 浅色",
-			"theme.selenizedDark": "Selenized 深色",
-			"theme.selenizedLight": "Selenized 浅色"
+			"theme.solarized-dark": "Solarized 深色",
+			"theme.solarized-light": "Solarized 浅色",
+			"theme.selenized-dark": "Selenized 深色",
+			"theme.selenized-light": "Selenized 浅色"
 		};
 
 		/** English dictionary, checked complete against the zh key set. */
 		const en = {
 			"theme.title": "Solarized / Selenized themes",
 			"theme.default": "Default",
-			"theme.solarizedDark": "Solarized Dark",
-			"theme.solarizedLight": "Solarized Light",
-			"theme.selenizedDark": "Selenized Dark",
-			"theme.selenizedLight": "Selenized Light"
-		};
-
-		/** Theme id → locale key mapping for the picker cards. */
-		const THEME_LOCALE = {
-			"solarized-dark": "theme.solarizedDark",
-			"solarized-light": "theme.solarizedLight",
-			"selenized-dark": "theme.selenizedDark",
-			"selenized-light": "theme.selenizedLight"
+			"theme.solarized-dark": "Solarized Dark",
+			"theme.solarized-light": "Solarized Light",
+			"theme.selenized-dark": "Selenized Dark",
+			"theme.selenized-light": "Selenized Light"
 		};
 		//#endregion
 
@@ -776,7 +772,7 @@ __TOKENS__
 							...styles.cardLabel,
 							...(selected ? styles.cardLabelSelected : {})
 						},
-						children: t(THEME_LOCALE[theme.id])
+						children: t("theme." + theme.id)
 					})
 				]
 			});
