@@ -1,5 +1,7 @@
 # Solarized-dsh-theme
 
+English | [中文](README.zh.md)
+
 Faithful [Solarized](https://github.com/altercation/solarized) and
 [Selenized](https://github.com/jan-warchol/selenized) themes for DeepSeek
 Harness (dsh). It registers four curated palettes into DSH's built-in theme
