@@ -1,4 +1,4 @@
-# dsh-Solarized
+# Solarized-dsh-theme
 
 Faithful [Solarized](https://github.com/altercation/solarized) and
 [Selenized](https://github.com/jan-warchol/selenized) themes for DeepSeek
@@ -32,7 +32,7 @@ dual-face plugin:
   loader entry (`solarized`); a no-op `apply`, exactly like the shipped ui-*
   packages.
 - **Browser half** (`lib/client.js`) — a `dsh.client` bundle (served at
-  `/plugins/dsh-solarized/client.js`) that:
+  `/plugins/solarized-dsh-theme/client.js`) that:
   1. registers the four themes via `ctx.theme.register(...)`;
   2. restores the saved theme id and applies it with `ctx.theme.setTheme(...)`;
   3. keeps the picker row store in sync with `theme/change`;
@@ -46,25 +46,31 @@ plus the `--shiki-*` syntax palette from its `shiki.css`.
 
 ## Persistence
 
-The choice is stored in `localStorage` (`dsh-solarized:theme`). DSH's Host
+The choice is stored in `localStorage` (`solarized-dsh-theme:theme`). DSH's Host
 settings wire only exposes an allowlisted set of namespaces to browser clients
 (`WEB_SETTINGS_NAMESPACES` in `dsh-host-apiproxy`), so a third-party namespace
 would answer `settings-not-exposed`; the product itself keeps remote browser
 preferences process-local, and localStorage matches that boundary for a visual
 preference while surviving reloads on the same origin.
 
+The ThemeService adopts its durable built-in preference from the Host settings
+asynchronously after boot, which overwrites a third-party preference restored
+too early. The saved theme is therefore re-asserted for a short boot window (a
+few `theme/change` events or five seconds), after which the window closes and
+subsequent user actions win.
+
 ## Install
 
 From anywhere, add the package to the `web` profile:
 
 ```sh
-dsh plugin --profile web add github:zhijun-dai/dsh-Solarized
+dsh plugin --profile web add github:zhijun-dai/Solarized-dsh-theme
 ```
 
 Or from a local checkout:
 
 ```sh
-dsh plugin --profile web add -w /path/to/dsh-Solarized
+dsh plugin --profile web add -w /path/to/Solarized-dsh-theme
 ```
 
 > The `-w` flag is required for a local path: every profile ships a
@@ -99,7 +105,7 @@ what "上架" means today:
    ```
 3. Users install with:
    ```sh
-   dsh plugin --profile web add dsh-solarized
+   dsh plugin --profile web add solarized-dsh-theme
    ```
    then restart `dsh web`.
 
