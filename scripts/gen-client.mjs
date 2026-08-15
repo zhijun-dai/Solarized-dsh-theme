@@ -668,7 +668,7 @@ __TOKENS__
 				flexDirection: "column",
 				alignItems: "center",
 				gap: "6px",
-				width: "104px",
+				width: "96px",
 				padding: "3px",
 				borderRadius: "10px",
 				// Longhands, not the border shorthand: React removes borderColor
