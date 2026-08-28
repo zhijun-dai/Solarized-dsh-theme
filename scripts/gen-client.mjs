@@ -575,6 +575,8 @@ window.__ModuleLoader__.load({
 		const SETTINGS_NS = "settings.solarized";
 		/** localStorage key holding the selected theme id. */
 		const STORAGE_KEY = "solarized-dsh-theme:theme";
+		/** localStorage key remembering the last built-in preference. */
+		const RESTORE_KEY = "solarized-dsh-theme:restore";
 		/** Sentinel meaning "no custom theme — follow the built-in appearance". */
 		const DEFAULT_THEME = "system";
 
@@ -601,7 +603,13 @@ __TOKENS__
 			"theme.solarized-dark": "Solarized 深色",
 			"theme.solarized-light": "Solarized 浅色",
 			"theme.selenized-dark": "Selenized 深色",
-			"theme.selenized-light": "Selenized 浅色"
+			"theme.selenized-light": "Selenized 浅色",
+			"theme.checkUpdate": "检查更新",
+			"theme.updating": "检查中…",
+			"theme.updateError": "检查更新失败",
+			"theme.updateCurrent": "当前",
+			"theme.updateLatest": "最新",
+			"theme.updateUpToDate": "已是最新版本"
 		};
 
 		/** English dictionary, checked complete against the zh key set. */
@@ -611,7 +619,13 @@ __TOKENS__
 			"theme.solarized-dark": "Solarized Dark",
 			"theme.solarized-light": "Solarized Light",
 			"theme.selenized-dark": "Selenized Dark",
-			"theme.selenized-light": "Selenized Light"
+			"theme.selenized-light": "Selenized Light",
+			"theme.checkUpdate": "Check for updates",
+			"theme.updating": "Checking…",
+			"theme.updateError": "Update check failed",
+			"theme.updateCurrent": "Current",
+			"theme.updateLatest": "Latest",
+			"theme.updateUpToDate": "You're up to date"
 		};
 		//#endregion
 
@@ -644,6 +658,25 @@ __TOKENS__
 		/** Persist a theme choice; DEFAULT_THEME clears the stored value. */
 		function writeSavedTheme(id) {
 			writeStorage(STORAGE_KEY, id === DEFAULT_THEME ? null : id);
+		}
+
+		/**
+		 * Remember a built-in preference (system/light/dark) whenever the
+		 * runtime is not on one of our themes, so turning the theme off
+		 * hands the user back exactly what they had before the plugin —
+		 * instead of dropping them onto "system".
+		 */
+		function rememberBuiltinPreference(preference) {
+			if (THEMES.some((themeDefinition) => themeDefinition.id === preference)) return;
+			if (preference === "light" || preference === "dark" || preference === DEFAULT_THEME) {
+				writeStorage(RESTORE_KEY, preference);
+			}
+		}
+
+		/** The preference to restore when turning the theme off (default: system). */
+		function readRestoredPreference() {
+			const raw = readStorage(RESTORE_KEY);
+			return raw === "light" || raw === "dark" ? raw : DEFAULT_THEME;
 		}
 		//#endregion
 
@@ -746,6 +779,38 @@ __TOKENS__
 				display: "flex",
 				overflow: "hidden",
 				border: "1px solid var(--dsw-alias-border-l2)"
+			},
+			updateRow: {
+				display: "flex",
+				alignItems: "center",
+				flexWrap: "wrap",
+				gap: "8px",
+				marginTop: "4px"
+			},
+			updateButton: {
+				background: "var(--dsw-alias-button-floating-fill)",
+				border: "1px solid var(--dsw-alias-border-l2)",
+				borderRadius: "8px",
+				color: "var(--dsw-alias-label-primary)",
+				cursor: "pointer",
+				font: "inherit",
+				fontSize: "12px",
+				lineHeight: "18px",
+				padding: "3px 10px"
+			},
+			updateDetail: {
+				color: "var(--dsw-alias-label-secondary)",
+				fontSize: "12px",
+				lineHeight: "18px"
+			},
+			updateCommand: {
+				background: "var(--dsw-alias-markdown-code-block)",
+				borderRadius: "6px",
+				color: "var(--dsw-alias-label-primary)",
+				fontFamily: "var(--ds-font-family-code)",
+				fontSize: "11px",
+				padding: "2px 8px",
+				wordBreak: "break-all"
 			}
 		};
 
@@ -820,6 +885,53 @@ __TOKENS__
 		}
 
 		/**
+		 * Update-check row: silently checks once when the settings row
+		 * mounts (host /solarized/check-update route, npm registry, 5-min
+		 * cache), showing current/latest versions and the copyable upgrade
+		 * command when a newer release exists — plus a manual "check for
+		 * updates" button. The mount check renders nothing until the result
+		 * lands, so opening Settings never flickers.
+		 */
+		function UpdateRow({ t }) {
+			const [state, setState] = react.useState({ idle: true });
+			const check = (fromClick) => {
+				if (fromClick) setState({ loading: true });
+				fetch("/solarized/check-update")
+					.then((response) => (response.ok ? response.json() : Promise.reject(new Error("HTTP " + response.status))))
+					.then((payload) => setState(payload))
+					.catch((error) => setState({ error: error instanceof Error ? error.message : String(error) }));
+			};
+			react.useEffect(() => {
+				check(false);
+			}, []);
+			let detail = null;
+			if (state.loading) detail = t("theme.updating");
+			else if (state.error) detail = t("theme.updateError") + " (" + state.error + ")";
+			else if (state.ok === false) detail = t("theme.updateError") + " (" + (state.error ?? "") + ")";
+			else if (state.upToDate) detail = t("theme.updateUpToDate") + " · " + t("theme.updateCurrent") + " " + state.current;
+			else if (state.latest) detail = t("theme.updateCurrent") + " " + state.current + " → " + t("theme.updateLatest") + " " + state.latest;
+			return (0, react_jsx_runtime.jsxs)("div", {
+				style: styles.updateRow,
+				children: [
+					(0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: () => check(true),
+						style: styles.updateButton,
+						children: t("theme.checkUpdate")
+					}),
+					detail !== null ? (0, react_jsx_runtime.jsx)("span", {
+						style: styles.updateDetail,
+						children: detail
+					}) : null,
+					state.ok === true && state.upToDate === false && state.latest ? (0, react_jsx_runtime.jsx)("code", {
+						style: styles.updateCommand,
+						children: state.command
+					}) : null
+				]
+			});
+		}
+
+		/**
 		 * Theme picker row registered into the Settings → General item slot,
 		 * right after the built-in Appearance row: title + a "Default" chip and
 		 * one swatch card per curated theme.
@@ -863,7 +975,8 @@ __TOKENS__
 								t
 							}, themeDefinition.id))
 						]
-					})
+					}),
+					(0, react_jsx_runtime.jsx)(UpdateRow, { t })
 				]
 			});
 		}
@@ -1050,27 +1163,63 @@ __TOKENS__
 
 			// Restore the saved theme. The ThemeService adopts its durable
 			// built-in preference ("light"/"dark"/"system") from the Host
-			// settings scope asynchronously after boot, which overwrites a
-			// third-party preference restored too early. Re-assert the saved
-			// theme for a short boot window (a handful of change events or a
-			// few seconds), then yield to subsequent user actions.
-			const saved = readSavedTheme();
-			const savedValid = typeof saved === "string" && saved !== DEFAULT_THEME && THEMES.some((themeDefinition) => themeDefinition.id === saved);
-			let bootGuard = savedValid ? 3 : 0;
+			// settings scope asynchronously after boot, and re-adopts it on
+			// every settings-document reload — switching a model rewrites
+			// the settings doc and clobbers our third-party preference back
+			// to "system". So instead of a one-shot boot window, defend on
+			// every theme/change: whenever the runtime falls back to the
+			// built-in default while we hold a saved theme, re-apply it.
+			// Explicit light/dark and other plugins' themes are respected.
 			const reassertSaved = () => {
-				if (bootGuard <= 0) return;
 				const current = ctx.theme.getTheme().preference;
-				if (current === saved) return;
-				bootGuard -= 1;
-				ctx.theme.setTheme(saved);
+				if (current !== DEFAULT_THEME) return;
+				const latest = readSavedTheme();
+				if (typeof latest === "string" && latest !== DEFAULT_THEME && THEMES.some((themeDefinition) => themeDefinition.id === latest)) {
+					ctx.theme.setTheme(latest);
+				}
 			};
 			reassertSaved();
-			const bootWindow = setTimeout(() => {
-				bootGuard = 0;
-			}, 5000);
-			ctx.effect(() => () => {
-				clearTimeout(bootWindow);
-			}, "@yuquexianzhou/solarized-dsh-theme: boot restore window");
+
+			// Durable two-layer persistence: localStorage is the instant
+			// layer, the host's solarized-state.json (under $DSH_HOME)
+			// survives Desktop's per-launch port churn where localStorage
+			// always starts empty. Hydrate once at boot when localStorage
+			// has no choice, then debounce-flush every change to the file.
+			const STATE_ROUTE = "/solarized/state";
+			let stateTimer = null;
+			const flushState = () => {
+				const saved = readSavedTheme();
+				fetch(STATE_ROUTE, {
+					method: "PUT",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ version: 1, theme: saved })
+				}).catch(() => {
+					// best-effort; localStorage still holds the choice
+				});
+			};
+			const scheduleFlush = () => {
+				if (stateTimer !== null) clearTimeout(stateTimer);
+				stateTimer = setTimeout(() => {
+					stateTimer = null;
+					flushState();
+				}, 300);
+			};
+			const hydrateFromFile = async () => {
+				if (readSavedTheme() !== null) return;
+				try {
+					const response = await fetch(STATE_ROUTE);
+					if (!response.ok) return;
+					const state = await response.json();
+					const theme = state && typeof state.theme === "string" && THEMES.some((themeDefinition) => themeDefinition.id === state.theme) ? state.theme : null;
+					if (theme !== null) {
+						writeSavedTheme(theme);
+						if (ctx.theme.getTheme().preference === DEFAULT_THEME) ctx.theme.setTheme(theme);
+					}
+				} catch {
+					// route absent (older host) — localStorage-only mode
+				}
+			};
+			hydrateFromFile();
 
 			const themeStore = createThemeStore();
 			let themeBound;
@@ -1079,16 +1228,22 @@ __TOKENS__
 			};
 			ctx.on("theme/change", (snapshot) => {
 				syncTheme(snapshot);
+				const pref = snapshot.preference;
+				// Record the built-in preference on every non-theme
+				// observation (boot, adopt() reloads, explicit Appearance
+				// changes) BEFORE any re-assert, so turning the theme off
+				// can hand the user back exactly what they had.
+				rememberBuiltinPreference(pref);
 				// If the preference moved to another plugin's third-party theme,
 				// drop our stored choice so only the last-picked plugin restores
 				// at boot (both plugins must implement this convention).
-				const pref = snapshot.preference;
 				if (pref !== DEFAULT_THEME && pref !== "light" && pref !== "dark" && !THEMES.some((themeDefinition) => themeDefinition.id === pref)) {
 					writeSavedTheme(DEFAULT_THEME);
 				}
 				// Re-assert from a fresh task: a re-entrant setTheme inside the
 				// dispatch is missed by other subscribers (ui-layout's
 				// ThemePresenter), so the restored theme would never reach the DOM.
+				scheduleFlush();
 				setTimeout(() => {
 					reassertSaved();
 				}, 0);
@@ -1104,8 +1259,15 @@ __TOKENS__
 				syncTheme(ctx.theme.getTheme());
 				return {
 					setTheme: (id) => {
-						ctx.theme.setTheme(id);
+						// persist first: setTheme publishes a synchronous
+						// theme/change, so the re-assert handler must already
+						// see the new saved value (otherwise toggling back to
+						// the default re-applies the old theme)
 						writeSavedTheme(id);
+						// turning the theme off restores the user's last
+						// built-in preference instead of forcing "system"
+						ctx.theme.setTheme(id === DEFAULT_THEME ? readRestoredPreference() : id);
+						scheduleFlush();
 					}
 				};
 			};
@@ -1117,6 +1279,10 @@ __TOKENS__
 				locale: SETTINGS_NS,
 				inject: themeInjected
 			}, ThemeRow));
+
+			ctx.effect(() => () => {
+				if (stateTimer !== null) clearTimeout(stateTimer);
+			}, "@yuquexianzhou/solarized-dsh-theme: state flush timer");
 		}
 		//#endregion
 
