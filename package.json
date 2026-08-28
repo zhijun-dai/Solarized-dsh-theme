@@ -1,6 +1,6 @@
 {
   "name": "@yuquexianzhou/solarized-dsh-theme",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Solarized + Selenized themes for DeepSeek Harness: four faithful palettes (Solarized Dark/Light, Selenized Dark/Light) registered into DSH's theme runtime with a picker row in Settings, including the canonical syntax colors for markdown code blocks",
   "license": "MIT",
   "author": "zhijun-dai",
