@@ -1162,17 +1162,31 @@ __TOKENS__
 			}, "@yuquexianzhou/solarized-dsh-theme: surface tint lifecycle");
 
 			// Restore the saved theme. The ThemeService adopts its durable
-			// built-in preference ("light"/"dark"/"system") from the Host
-			// settings scope asynchronously after boot, and re-adopts it on
-			// every settings-document reload — switching a model rewrites
-			// the settings doc and clobbers our third-party preference back
-			// to "system". So instead of a one-shot boot window, defend on
-			// every theme/change: whenever the runtime falls back to the
-			// built-in default while we hold a saved theme, re-apply it.
-			// Explicit light/dark and other plugins' themes are respected.
+			// built-in preference from the Host settings scope asynchronously
+			// after boot, and re-adopts it on every settings-document reload
+			// — switching a model rewrites the settings doc and clobbers our
+			// third-party preference back to the document's value ("system"
+			// when never written, or a persisted light/dark). So instead of
+			// a one-shot boot window, defend on every theme/change.
+			//
+			// The one seam that tells "the user clicked light/dark in the
+			// Appearance row THIS session" apart from "adopt() copied the
+			// settings document at boot/reload" is the setTheme wrapper:
+			// adopt() writes the runtime preference directly and never goes
+			// through setTheme. A built-in preference only wins while it
+			// matches a live explicit pick; values adopted from the document
+			// (livePick null) are stale for us — the theme row choice is
+			// newer than the document's light/dark — so the theme is
+			// re-applied then. Picking a theme clears the record.
+			let liveBuiltinPick = null;
+			const originalSetTheme = ctx.theme.setTheme;
+			ctx.theme.setTheme = (id) => {
+				liveBuiltinPick = id === "light" || id === "dark" || id === DEFAULT_THEME ? id : null;
+				originalSetTheme.call(ctx.theme, id);
+			};
 			const reassertSaved = () => {
 				const current = ctx.theme.getTheme().preference;
-				if (current !== DEFAULT_THEME) return;
+				if ((current === "light" || current === "dark") && current === liveBuiltinPick) return;
 				const latest = readSavedTheme();
 				if (typeof latest === "string" && latest !== DEFAULT_THEME && THEMES.some((themeDefinition) => themeDefinition.id === latest)) {
 					ctx.theme.setTheme(latest);
@@ -1282,6 +1296,9 @@ __TOKENS__
 
 			ctx.effect(() => () => {
 				if (stateTimer !== null) clearTimeout(stateTimer);
+				// undo the setTheme wrapper so a stopped plugin leaves the
+				// runtime as it found it
+				ctx.theme.setTheme = originalSetTheme;
 			}, "@yuquexianzhou/solarized-dsh-theme: state flush timer");
 		}
 		//#endregion
