@@ -10,15 +10,66 @@
 	<a href="https://github.com/zhijun-dai/Solarized-dsh-theme/issues"><img src="https://img.shields.io/github/issues/zhijun-dai/Solarized-dsh-theme?colorA=002b36&colorB=cb4b16&style=for-the-badge"></a>
 	<a href="https://github.com/zhijun-dai/Solarized-dsh-theme/contributors"><img src="https://img.shields.io/github/contributors/zhijun-dai/Solarized-dsh-theme?colorA=002b36&colorB=859900&style=for-the-badge"></a>
 	<a href="https://www.npmjs.com/package/@yuquexianzhou/solarized-dsh-theme"><img src="https://img.shields.io/npm/v/@yuquexianzhou/solarized-dsh-theme?colorA=002b36&colorB=2aa198&style=for-the-badge"></a>
+	<a href="https://www.npmjs.com/package/@yuquexianzhou/solarized-dsh-theme"><img src="https://img.shields.io/npm/dt/@yuquexianzhou/solarized-dsh-theme?colorA=002b36&colorB=859900&style=for-the-badge"></a>
 </p>
 
 <p align="center">
-	English | <a href="README.zh.md">中文</a>
+	<a href="README.zh.md">中文</a>
 </p>
 
 <p align="center">
-	<img src="assets/preview.webp"/>
+	<img src="assets/preview.webp" width="100%" alt="Solarized and Selenized themes in DeepSeek Harness"/>
 </p>
+
+## Table of Contents
+
+- [Intro](#intro)
+- [Features](#features)
+- [Previews](#previews)
+- [Install](#install)
+- [Usage](#usage)
+- [FAQ](#faq)
+- [💝 Thanks to](#-thanks-to)
+
+## Intro
+
+The classic low-contrast, eye-friendly palettes for
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) — one
+package covering **Web GUI** (`dsh web`), **DSH Desktop** and **dsh-TUI**:
+
+- ☀️ **[Solarized](https://ethanschoonover.com/solarized/)** — Ethan
+  Schoonover's carefully tuned 16-color system, designed for long reading
+  sessions without eye strain.
+- 🟢 **[Selenized](https://github.com/jan-warchol/selenized)** — its
+  refined take: the same low-contrast philosophy with modernized hues and
+  better color distinction.
+
+Both come in dark and light, registered into the built-in theme system on a
+level with the light/dark/system choices — with canonical syntax colors for
+code blocks and a one-click switch row in **Settings → General** that
+remembers your choice.
+
+## Features
+
+- 👁️ **Eye-friendly by design** — Solarized's palette is luminance-tuned,
+  not hue-picked, so text stays readable for hours; Selenized keeps the
+  comfort with cleaner, more distinct accents.
+- 🎨 **Faithful palettes** — every color is a canonical Solarized /
+  Selenized value; no default DeepSeek blue-gray leaks through.
+- 🖥️ **Canonical syntax colors** — code blocks follow the classic Solarized
+  syntax mapping (keyword magenta, string cyan, number blue…).
+- 🖱️ **Component-level accents** — bubbles, tool-call rows, code tags,
+  timestamps and hover interactions tinted from the palettes.
+- 💻 **dsh-TUI themes** — one install command drops the four themes into
+  your terminal client; auto-synced on every start.
+- 🔄 **Update check** — Settings silently checks npm for a newer release
+  (manual button too) and shows a copyable upgrade command.
+- 🧠 **Choice remembered** — survives restarts and model switches; turning
+  it off restores the light/dark choice you had before, not a forced
+  "system". Desktop port churn is covered by durable state under
+  `$DSH_HOME`.
+- ⚙️ **Zero intrusion** — switching to **Default** restores the built-in
+  appearance pixel-identical.
 
 ## Previews
 
@@ -31,42 +82,20 @@
 <img src="assets/solarized-light.webp"/>
 </details>
 <details>
-<summary>🌗 Selenized Dark</summary>
+<summary>🟢 Selenized Dark</summary>
 <img src="assets/selenized-dark.webp"/>
 </details>
 <details>
-<summary>🌕 Selenized Light</summary>
+<summary>🌿 Selenized Light</summary>
 <img src="assets/selenized-light.webp"/>
 </details>
 
-## Usage
+## Install
 
-This is a dual-face theme plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
-(dsh). It registers four faithful palettes into the built-in theme runtime, so
-they appear as selectable skins in **Settings → General → Solarized / Selenized
-themes**.
-
-[Solarized](https://github.com/altercation/solarized) is a precision color
-scheme by Ethan Schoonover (2011), designed in the CIELAB (L\*a\*b\*) color
-space with fixed, perceptually uniform lightness relationships between its
-sixteen colors — the science that keeps its dark and light modes mutually
-symmetric. [Selenized](https://github.com/jan-warchol/selenized), by Jan
-Warchoł (2018), is Solarized redesigned: it corrects the palette's lightness
-inconsistencies while keeping its spirit.
-
-### Install
-
-From a GitHub repository:
+From GitHub (recommended — always the latest):
 
 ```sh
 dsh plugin --profile web add github:zhijun-dai/Solarized-dsh-theme
-```
-
-From a local checkout (the `-w` flag is required — the profile directory is a
-pnpm workspace root):
-
-```sh
-dsh plugin --profile web add -w /path/to/Solarized-dsh-theme
 ```
 
 From npm:
@@ -75,30 +104,62 @@ From npm:
 dsh plugin --profile web add @yuquexianzhou/solarized-dsh-theme
 ```
 
+> 💡 The npm release may lag slightly behind GitHub. For the very latest,
+> use the GitHub install above (pin a branch with `#branch-name`).
+
+For DSH Desktop, target the desktop profile:
+
+```sh
+dsh plugin --profile desktop add @yuquexianzhou/solarized-dsh-theme
+```
+
+### dsh-TUI (terminal themes)
+
+The same package syncs the four themes into your dsh-TUI. Install into the
+TUI profile and they land on the first start:
+
+```sh
+dsh plugin --profile dsh-tui add @yuquexianzhou/solarized-dsh-theme
+```
+
+Then pick a theme inside the TUI: `/theme solarized-dark`.
+
+> 💡 Installed into a web/desktop profile of a user who also runs dsh-TUI,
+> the themes stay in sync on every web start. No `~/.dsh-tui` on disk?
+> Strict no-op, nothing is created.
+
 Restart the web server afterwards:
 
 ```sh
 dsh web
 ```
 
-### Switch themes
+## Usage
 
-Open the web UI, go to **Settings → General**, and pick one of the four themes
-(or **Default** to follow the built-in appearance). The choice is stored
-per-browser in `localStorage`.
+Open the web UI, go to **Settings → General**, and pick one of the four
+themes (or **Default** to follow the built-in appearance). Choice is saved
+per browser and restored at boot.
 
-## How it works
+## FAQ
 
-The token tables are generated from the official Solarized and Selenized
-palettes (never hand-edited). `scripts/gen-client.mjs` maps every color onto
-the `--dsw-alias-*` token directory from dsh's
-`@deepseek-ai/dsh-client-ui-theme` stylesheets (including the `--shiki-*`
-syntax palette and the leaked `--dsw-static-deepseek-*` static colors) and
-embeds the four themes into the browser bundle `lib/client.js`.
+**Q: Why do the colors look "washed out"?**
 
-```sh
-node scripts/gen-client.mjs
-```
+That's the point — Solarized deliberately keeps contrast low so text stays
+readable for hours without eye strain. If you want more punch, Selenized
+offers the same comfort with stronger accents.
+
+**Q: How is my choice remembered?**
+
+Browser `localStorage` (instant) plus a durable file under `$DSH_HOME` for
+Desktop — survives restarts, model switches and per-launch port changes.
+Your explicit light/dark/system pick in the built-in Appearance row always
+wins.
+
+**Q: How do I upgrade?**
+
+Re-run the install command, or check the Settings row — it silently tells
+you when a newer version exists and shows the copyable upgrade command.
+Then restart `dsh web`.
 
 ## 💝 Thanks to
 
@@ -107,6 +168,10 @@ node scripts/gen-client.mjs
 - [Jan Warchoł](https://github.com/jan-warchol) — Selenized
 - [KinGao294/dsh-skin](https://github.com/KinGao294/dsh-skin) — the reference theme plugin this port is modeled on
 - [DeepSeek](https://github.com/deepseek-ai)
+
+<p align="center">
+	🏆 Listed on <a href="https://github.com/awesome-dsh-plugin/awesome-dsh-plugin">Awesome DSH Plugin</a>
+</p>
 
 &nbsp;
 
