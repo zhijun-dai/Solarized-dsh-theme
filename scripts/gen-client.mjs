@@ -893,7 +893,7 @@ __TOKENS__
 		 * lands, so opening Settings never flickers.
 		 */
 		function UpdateRow({ t }) {
-			const [state, setState] = react.useState({ idle: true });
+			const [state, setState] = _react.useState({ idle: true });
 			const check = (fromClick) => {
 				if (fromClick) setState({ loading: true });
 				fetch("/solarized/check-update")
@@ -901,7 +901,7 @@ __TOKENS__
 					.then((payload) => setState(payload))
 					.catch((error) => setState({ error: error instanceof Error ? error.message : String(error) }));
 			};
-			react.useEffect(() => {
+			_react.useEffect(() => {
 				check(false);
 			}, []);
 			let detail = null;
