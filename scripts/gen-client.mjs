@@ -568,7 +568,6 @@ window.__ModuleLoader__.load({
 		Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 		let react_jsx_runtime = require("react/jsx-runtime");
 		let _react = require("react");
-		let _runtime_client = require("@deepseek-ai/dsh-client-runtime/client");
 
 		//#region @yuquexianzhou/solarized-dsh-theme: definitions
 		/** The settings row's locale namespace. */
@@ -680,26 +679,18 @@ __TOKENS__
 		}
 		//#endregion
 
-		//#region @yuquexianzhou/solarized-dsh-theme: settings row store
+		//#region @yuquexianzhou/solarized-dsh-theme: settings row subscription
 		/**
-		 * Theme row slot store: a mirror of the theme service snapshot. The
-		 * plugin's theme/change listener is the only writer; the row component
-		 * reads via props.useStore.
+		 * Theme row subscription: the row reads the live theme preference
+		 * through _react.useSyncExternalStore, so the plugin only owns a
+		 * listener set it pokes on theme/change. Since DSH 0.1.2 the frozen
+		 * module table has no dsh-client-runtime (its slots role moved to
+		 * dsh-client-ui-renderer), so nothing in this bundle may require()
+		 * that package — snapshot stores are plugin-owned here.
 		 */
-		function createThemeStore() {
-			return (0, _runtime_client.defineStore)({
-				init: () => ({
-					theme: "system",
-					revision: -1
-				}),
-				actions: {
-					sync: (d, theme, revision) => {
-						if (revision <= d.revision) return;
-						d.theme = theme;
-						d.revision = revision;
-					}
-				}
-			});
+		const themeListeners = new Set();
+		function emitTheme() {
+			for (const listener of [...themeListeners]) listener();
 		}
 		//#endregion
 
@@ -936,8 +927,8 @@ __TOKENS__
 		 * right after the built-in Appearance row: title + a "Default" chip and
 		 * one swatch card per curated theme.
 		 */
-		function ThemeRow({ t, setTheme, useStore }) {
-			const theme = useStore((s) => s.theme);
+		function ThemeRow({ t, setTheme, getTheme, subscribeTheme }) {
+			const theme = _react.useSyncExternalStore(subscribeTheme, getTheme);
 			const selected = THEMES.some((candidate) => candidate.id === theme) ? theme : null;
 			return (0, react_jsx_runtime.jsxs)("div", {
 				style: styles.group,
@@ -1235,13 +1226,8 @@ __TOKENS__
 			};
 			hydrateFromFile();
 
-			const themeStore = createThemeStore();
-			let themeBound;
-			const syncTheme = (snapshot) => {
-				themeBound?.sync(snapshot.preference, snapshot.revision);
-			};
 			ctx.on("theme/change", (snapshot) => {
-				syncTheme(snapshot);
+				emitTheme();
 				const pref = snapshot.preference;
 				// Record the built-in preference on every non-theme
 				// observation (boot, adopt() reloads, explicit Appearance
@@ -1268,28 +1254,30 @@ __TOKENS__
 				en
 			}), "@yuquexianzhou/solarized-dsh-theme: settings row dictionaries");
 
-			const themeInjected = (actions) => {
-				themeBound = actions;
-				syncTheme(ctx.theme.getTheme());
-				return {
-					setTheme: (id) => {
-						// persist first: setTheme publishes a synchronous
-						// theme/change, so the re-assert handler must already
-						// see the new saved value (otherwise toggling back to
-						// the default re-applies the old theme)
-						writeSavedTheme(id);
-						// turning the theme off restores the user's last
-						// built-in preference instead of forcing "system"
-						ctx.theme.setTheme(id === DEFAULT_THEME ? readRestoredPreference() : id);
-						scheduleFlush();
-					}
-				};
-			};
+			const themeInjected = () => ({
+				setTheme: (id) => {
+					// persist first: setTheme publishes a synchronous
+					// theme/change, so the re-assert handler must already
+					// see the new saved value (otherwise toggling back to
+					// the default re-applies the old theme)
+					writeSavedTheme(id);
+					// turning the theme off restores the user's last
+					// built-in preference instead of forcing "system"
+					ctx.theme.setTheme(id === DEFAULT_THEME ? readRestoredPreference() : id);
+					scheduleFlush();
+				},
+				getTheme: () => ctx.theme.getTheme().preference,
+				subscribeTheme: (listener) => {
+					themeListeners.add(listener);
+					return () => {
+						themeListeners.delete(listener);
+					};
+				}
+			});
 			ctx.slots.inject("settings.general.item", () => ctx.slots.register({
 				name: "settings.general.item",
 				id: "solarized",
 				order: 20,
-				store: themeStore,
 				locale: SETTINGS_NS,
 				inject: themeInjected
 			}, ThemeRow));
